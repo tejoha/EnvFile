@@ -8,8 +8,8 @@ import java.util.Map;
 
 public class RunConfigEnvVarsProvider extends AbstractEnvVarsProvider {
 
-    public RunConfigEnvVarsProvider(boolean shouldSubstituteEnvVar) {
-        super(shouldSubstituteEnvVar);
+    public RunConfigEnvVarsProvider(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface) {
+        super(shouldSubstituteEnvVar, setIpEnable, selectedNetworkInterface);
     }
 
     @NotNull

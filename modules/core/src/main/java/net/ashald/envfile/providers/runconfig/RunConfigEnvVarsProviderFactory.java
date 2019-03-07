@@ -10,8 +10,8 @@ public class RunConfigEnvVarsProviderFactory implements EnvVarsProviderFactory {
 
     @NotNull
     @Override
-    public EnvVarsProvider createProvider(boolean shouldSubstituteEnvVar) {
-        return new RunConfigEnvVarsProvider(shouldSubstituteEnvVar);
+    public EnvVarsProvider createProvider(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface) {
+        return new RunConfigEnvVarsProvider(shouldSubstituteEnvVar, setIpEnable, selectedNetworkInterface);
     }
 
     @Override

@@ -11,8 +11,8 @@ import java.util.Map;
 
 public class YamlEnvFileParser extends AbstractEnvVarsProvider {
 
-    public YamlEnvFileParser(boolean shouldSubstituteEnvVar) {
-        super(shouldSubstituteEnvVar);
+    public YamlEnvFileParser(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface) {
+        super(shouldSubstituteEnvVar, setIpEnable, selectedNetworkInterface);
     }
 
     @NotNull

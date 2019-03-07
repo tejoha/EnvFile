@@ -21,10 +21,16 @@ public class EnvFileEntry {
     private boolean isEnabled;
     private boolean isSubstitutionEnabled;
 
-    public EnvFileEntry(RunConfigurationBase envFileRunConfig, String envFileParserId, String envFilePath, boolean enabled, boolean substitutionEnabled) {
+    private boolean ipEnable;
+    private String networkInterface;
+
+    public EnvFileEntry(RunConfigurationBase envFileRunConfig, String envFileParserId, String envFilePath,
+                        boolean enabled, boolean substitutionEnabled, boolean setIpEnable, String networkInterface_) {
         runConfig = envFileRunConfig;
         parserId = envFileParserId;
         path = envFilePath;
+        ipEnable = setIpEnable;
+        networkInterface = networkInterface_;
         setEnable(enabled);
         setSubstitutionEnabled(substitutionEnabled);
     }
@@ -96,7 +102,7 @@ public class EnvFileEntry {
     @Nullable
     private EnvVarsProvider getProvider() {
         EnvVarsProviderFactory factory = getProviderFactory();
-        return factory == null ? null : factory.createProvider(isSubstitutionEnabled);
+        return factory == null ? null : factory.createProvider(isSubstitutionEnabled, ipEnable, networkInterface);
     }
 
     private File getFile() {

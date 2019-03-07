@@ -6,12 +6,19 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public abstract class AbstractEnvVarsProvider implements EnvVarsProvider {
+
     private boolean isEnvVarSubstitutionEnabled;
 
-    public AbstractEnvVarsProvider(boolean shouldSubstituteEnvVar) {
-        isEnvVarSubstitutionEnabled = shouldSubstituteEnvVar;
+    private boolean setIpEnable;
+    private String selectedNetworkInterface;
+
+    public AbstractEnvVarsProvider(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface) {
+        this.isEnvVarSubstitutionEnabled = shouldSubstituteEnvVar;
+        this.setIpEnable = setIpEnable;
+        this.selectedNetworkInterface = selectedNetworkInterface;
     }
 
     @NotNull
@@ -37,6 +44,18 @@ public abstract class AbstractEnvVarsProvider implements EnvVarsProvider {
 
     @NotNull
     private String renderValue(String template, @NotNull Map<String, String> context) {
+        if (setIpEnable) {
+            if (isIpValue(template)) {
+                try {
+                    template = NetworkInterfaceProvider.getInstance().getIpv4(selectedNetworkInterface);
+                } catch (NoSuchElementException e) {
+                    template = getDefaultIpValue(template);
+                }
+            }
+        } else if (isIpValue(template)){
+            template = getDefaultIpValue(template);
+        }
+
         if (!isEnvVarSubstitutionEnabled) {
             return template;
         }
@@ -46,5 +65,13 @@ public abstract class AbstractEnvVarsProvider implements EnvVarsProvider {
         String stage2 = new StringSubstitutor(key -> context.getOrDefault(key, "")).replace(stage1);
 
         return stage2;
+    }
+
+    private boolean isIpValue(@NotNull String value) {
+        return value.toLowerCase().startsWith("{{ip|") && value.toLowerCase().endsWith("}}");
+    }
+
+    private String getDefaultIpValue(@NotNull String value) {
+        return value.toLowerCase().replace("{{ip|", "").replace("}}","");
     }
 }

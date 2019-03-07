@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class DotEnvFileParser extends AbstractEnvVarsProvider {
 
-    public DotEnvFileParser(boolean shouldSubstituteEnvVar) {
-        super(shouldSubstituteEnvVar);
+    public DotEnvFileParser(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface) {
+        super(shouldSubstituteEnvVar, setIpEnable, selectedNetworkInterface);
     }
 
     @NotNull

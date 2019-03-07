@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class YamlEnvFileParserTest {
 
-    private YamlEnvFileParser parser = new YamlEnvFileParser(true);
+    private YamlEnvFileParser parser = new YamlEnvFileParser(true, false, "none");
 
     private String getFile(String name) {
         return Paths.get("src","test", "resources", "providers", "yaml", name).toString();

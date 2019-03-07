@@ -9,6 +9,7 @@ import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.util.Conditions;
@@ -18,6 +19,7 @@ import com.intellij.ui.table.TableView;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.ListTableModel;
+import net.ashald.envfile.NetworkInterfaceProvider;
 import net.ashald.envfile.platform.EnvFileEntry;
 import net.ashald.envfile.platform.EnvVarsProviderExtension;
 import net.ashald.envfile.platform.EnvFileSettings;
@@ -44,8 +46,12 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
     private final JCheckBox substituteEnvVarsCheckBox;
     private final JCheckBox supportPathMacroCheckBox;
     private final JCheckBox ignoreMissingCheckBox;
+
     private final ListTableModel<EnvFileEntry> envFilesModel;
     private final TableView<EnvFileEntry> envFilesTable;
+
+    private final JCheckBox setIpCheckBox;
+    private final JComboBox networkInterfaceComboBox;
 
     EnvFileConfigurationPanel(T configuration) {
         runConfig = configuration;
@@ -80,6 +86,8 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
                 substituteEnvVarsCheckBox.setEnabled(useEnvFileCheckBox.isSelected());
                 supportPathMacroCheckBox.setEnabled(useEnvFileCheckBox.isSelected());
                 ignoreMissingCheckBox.setEnabled(useEnvFileCheckBox.isSelected());
+                setIpCheckBox.setEnabled(useEnvFileCheckBox.isSelected());
+                networkInterfaceComboBox.setEnabled(useEnvFileCheckBox.isSelected() && setIpCheckBox.isSelected());
             }
         });
         substituteEnvVarsCheckBox = new JCheckBox("Substitute Environment Variables (${FOO} / ${BAR:-default} / $${ESCAPED})");
@@ -87,8 +95,23 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
         supportPathMacroCheckBox = new JCheckBox("Process JetBrains path macro references ($PROJECT_DIR$)");
         ignoreMissingCheckBox = new JCheckBox("Ignore missing files");
 
+        setIpCheckBox = new JCheckBox("Set Environment Variable Value {{ip|'defaultValue'}} to IP of Network Interface :");
+        setIpCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                networkInterfaceComboBox.setEnabled(setIpCheckBox.isSelected());
+            }
+        });
+
+        networkInterfaceComboBox = new ComboBox(1);
+        NetworkInterfaceProvider.getInstance().getNetworkInterfaceWithIp4()
+                .entrySet()
+                .forEach(entry -> networkInterfaceComboBox.addItem(new NetworkInterfaceItem(entry.getKey(), entry.getValue())));
+
         // TODO: come up with a generic approach for this
-        envFilesModel.addRow(new EnvFileEntry(runConfig, "runconfig", null, true, substituteEnvVarsCheckBox.isSelected()));
+        envFilesModel.addRow(new EnvFileEntry(runConfig, "runconfig", null, true,
+                             substituteEnvVarsCheckBox.isSelected(), setIpCheckBox.isSelected(),
+                             ((NetworkInterfaceItem) networkInterfaceComboBox.getSelectedItem()).getName()));
 
         // Create Toolbar - Add/Remove/Move actions
         final ToolbarDecorator envFilesTableDecorator = ToolbarDecorator.createDecorator(envFilesTable);
@@ -131,6 +154,8 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
         optionsPanel.add(substituteEnvVarsCheckBox);
         optionsPanel.add(supportPathMacroCheckBox);
         optionsPanel.add(ignoreMissingCheckBox);
+        optionsPanel.add(setIpCheckBox);
+        optionsPanel.add(networkInterfaceComboBox);
 
         // Compose UI
         JPanel checkboxPanel = new JPanel();
@@ -169,7 +194,10 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
         DefaultActionGroup actionGroup = new DefaultActionGroup(null, false);
 
         for (final EnvVarsProviderExtension extension : EnvVarsProviderExtension.getParserExtensions()) {
-            if (!extension.getFactory().createProvider(substituteEnvVarsCheckBox.isSelected()).isEditable()) {
+            if (!extension.getFactory().createProvider(substituteEnvVarsCheckBox.isSelected(),
+                                                       setIpCheckBox.isSelected(),
+                                                       ((NetworkInterfaceItem) networkInterfaceComboBox.getSelectedItem()).getName())
+                                                       .isEditable()) {
                 continue;
             }
 
@@ -193,7 +221,9 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
                         }
 
                         ArrayList<EnvFileEntry> newList = new ArrayList<EnvFileEntry>(model.getItems());
-                        final EnvFileEntry newOptions = new EnvFileEntry(runConfig, extension.getId(), selectedPath, true, substituteEnvVarsCheckBox.isSelected());
+                        final EnvFileEntry newOptions = new EnvFileEntry(runConfig, extension.getId(), selectedPath,
+                                true, substituteEnvVarsCheckBox.isSelected(), setIpCheckBox.isSelected(),
+                                ((NetworkInterfaceItem) networkInterfaceComboBox.getSelectedItem()).getName());
                         newList.add(newOptions);
                         model.setItems(newList);
                         int index = model.getRowCount() - 1;
@@ -250,7 +280,9 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
                 substituteEnvVarsCheckBox.isSelected(),
                 supportPathMacroCheckBox.isSelected(),
                 envFilesModel.getItems(),
-                ignoreMissingCheckBox.isSelected()
+                ignoreMissingCheckBox.isSelected(),
+                setIpCheckBox.isSelected(),
+                ((NetworkInterfaceItem) networkInterfaceComboBox.getSelectedItem()).getName()
         );
     }
 
@@ -259,11 +291,22 @@ class EnvFileConfigurationPanel<T extends RunConfigurationBase> extends JPanel {
         substituteEnvVarsCheckBox.setSelected(state.isSubstituteEnvVarsEnabled());
         supportPathMacroCheckBox.setSelected(state.isPathMacroSupported());
         ignoreMissingCheckBox.setSelected(state.isIgnoreMissing());
+        setIpCheckBox.setSelected(state.isSetIpEnable());
+        int size = networkInterfaceComboBox.getItemCount();
+        for (int i = 0; i < size; i++) {
+            NetworkInterfaceItem item = (NetworkInterfaceItem) networkInterfaceComboBox.getItemAt(i);
+            if (item.getName().equals(state.getSelectedNetworkInterface())) {
+                networkInterfaceComboBox.setSelectedIndex(i);
+                break;
+            }
+        }
 
         envFilesTable.setEnabled(state.isEnabled());
         substituteEnvVarsCheckBox.setEnabled(state.isEnabled());
         supportPathMacroCheckBox.setEnabled(state.isEnabled());
         ignoreMissingCheckBox.setEnabled(state.isEnabled());
+        setIpCheckBox.setEnabled(state.isEnabled());
+        networkInterfaceComboBox.setEnabled(useEnvFileCheckBox.isSelected() && setIpCheckBox.isSelected());
 
         envFilesModel.setItems(new ArrayList<>(state.getEntries()));
     }

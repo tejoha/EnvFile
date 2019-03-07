@@ -8,8 +8,8 @@ public class DotEnvFileParserFactory implements EnvVarsProviderFactory {
 
     @Override
     public @NotNull
-    EnvVarsProvider createProvider(boolean shouldSubstituteEnvVar) {
-        return new DotEnvFileParser(shouldSubstituteEnvVar);
+    EnvVarsProvider createProvider(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface) {
+        return new DotEnvFileParser(shouldSubstituteEnvVar, setIpEnable, selectedNetworkInterface);
     }
 
     @Override

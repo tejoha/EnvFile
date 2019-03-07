@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 public interface EnvVarsProviderFactory {
 
     @NotNull
-    EnvVarsProvider createProvider(boolean shouldSubstituteEnvVar);
+    EnvVarsProvider createProvider(boolean shouldSubstituteEnvVar, boolean setIpEnable, String selectedNetworkInterface);
 
     @NotNull String getTitle();
 

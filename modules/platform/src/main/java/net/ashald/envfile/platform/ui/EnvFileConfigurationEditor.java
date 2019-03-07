@@ -38,6 +38,9 @@ public class EnvFileConfigurationEditor<T extends RunConfigurationBase> extends 
     @NonNls private static final String FIELD_PATH = "PATH";
     @NonNls private static final String FIELD_PARSER = "PARSER";
 
+    @NonNls private static final String FIELD_SET_IP_VARS = "IS_SET_IP";
+    @NonNls private static final String FIELD_SELECTED_NETWORK_INTERFACE = "SELECTED_NETWORK_INTERFACE";
+
     private EnvFileConfigurationPanel editor;
 
     public EnvFileConfigurationEditor(T configuration) {
@@ -80,6 +83,11 @@ public class EnvFileConfigurationEditor<T extends RunConfigurationBase> extends 
         String ignoreMissingStr = JDOMExternalizerUtil.readField(element, FIELD_IGNORE_MISSING, "false");
         boolean ignoreMissing = Boolean.parseBoolean(ignoreMissingStr);
 
+        String envVarsSetIp = JDOMExternalizerUtil.readField(element, FIELD_SET_IP_VARS, "false");
+        boolean setIpEnabled = Boolean.parseBoolean(envVarsSetIp);
+
+        String selectedNetworkInterface = JDOMExternalizerUtil.readField(element, FIELD_SELECTED_NETWORK_INTERFACE, "none");
+
         List<EnvFileEntry> entries = new ArrayList<EnvFileEntry>();
 
         final Element entriesElement = element.getChild(ELEMENT_ENTRY_LIST);
@@ -93,7 +101,7 @@ public class EnvFileConfigurationEditor<T extends RunConfigurationBase> extends 
                 String parserId = envElement.getAttributeValue(FIELD_PARSER, "~");
                 String path = envElement.getAttributeValue(FIELD_PATH);
 
-                entries.add(new EnvFileEntry(configuration, parserId, path, isEntryEnabled, envVarsSubstEnabled));
+                entries.add(new EnvFileEntry(configuration, parserId, path, isEntryEnabled, envVarsSubstEnabled, setIpEnabled, selectedNetworkInterface));
             }
         }
 
@@ -106,11 +114,11 @@ public class EnvFileConfigurationEditor<T extends RunConfigurationBase> extends 
             }
         }
         if (!hasConfigEntry) {
-            entries.add(new EnvFileEntry(configuration, "runconfig", null, true, envVarsSubstEnabled));
+            entries.add(new EnvFileEntry(configuration, "runconfig", null, true, envVarsSubstEnabled, false, ""));
         }
         // For a while to migrate old users - end
 
-        EnvFileSettings state = new EnvFileSettings(isEnabled, envVarsSubstEnabled, pathMacroSupported, entries, ignoreMissing);
+        EnvFileSettings state = new EnvFileSettings(isEnabled, envVarsSubstEnabled, pathMacroSupported, entries, ignoreMissing, setIpEnabled, selectedNetworkInterface);
         configuration.putUserData(USER_DATA_KEY, state);
     }
 
@@ -121,6 +129,8 @@ public class EnvFileConfigurationEditor<T extends RunConfigurationBase> extends 
             JDOMExternalizerUtil.writeField(element, FIELD_SUBSTITUTE_VARS, Boolean.toString(state.isSubstituteEnvVarsEnabled()));
             JDOMExternalizerUtil.writeField(element, FIELD_PATH_MACRO_VARS, Boolean.toString(state.isPathMacroSupported()));
             JDOMExternalizerUtil.writeField(element, FIELD_IGNORE_MISSING, Boolean.toString(state.isIgnoreMissing()));
+            JDOMExternalizerUtil.writeField(element, FIELD_SET_IP_VARS , Boolean.toString(state.isSetIpEnable()));
+            JDOMExternalizerUtil.writeField(element, FIELD_SELECTED_NETWORK_INTERFACE , state.getSelectedNetworkInterface());
 
             final Element entriesElement = new Element(ELEMENT_ENTRY_LIST);
             for (EnvFileEntry entry : state.getEntries()) {

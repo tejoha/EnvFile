@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class DotEnvFileParserTest {
 
-    private DotEnvFileParser parser = new DotEnvFileParser(true);
+    private DotEnvFileParser parser = new DotEnvFileParser(true, false, "none");
 
     private String getFile(String name) {
         return Paths.get("src","test", "resources", "providers", "dotenv", name).toString();
